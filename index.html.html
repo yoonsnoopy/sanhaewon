@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>증상-처방 사이트</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f8ff;
+    }
+    .sidebar {
+      width: 250px;
+      background-color: #2d3e50;
+      color: white;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .sidebar h2 {
+      color: #f7f7f7;
+      margin-top: 0;
+    }
+    .sidebar .button {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #4a90e2;
+      color: white;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 14pt;
+      transition: background-color 0.3s;
+    }
+    .sidebar .button:hover {
+      background-color: #357ABD;
+    }
+    .content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .content .info {
+      width: 80%;
+      max-width: 800px;
+    }
+    .content .info h2 {
+      margin-top: 0;
+      text-align: center;
+      font-size: 20pt;
+      color: #333;
+    }
+    .content .info .choice-box {
+      width: 100%;
+      margin: 10px 0;
+      padding: 20px;
+      background-color: #e1f5fe;
+      color: #333;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: left;
+      box-sizing: border-box;
+      font-size: 14pt;
+      line-height: 1.6;
+      transition: background-color 0.3s;
+    }
+    .content .info .choice-box:hover {
+      background-color: #b3e5fc;
+    }
+    .content .info .choice-box h3 {
+      margin: 0;
+      font-size: 19pt;
+    }
+    .content .info .choice-box p {
+      margin: 0;
+      font-size: 16pt;
+    }
+    .ingredients {
+      display: none;
+      margin-top: 10px;
+      font-weight: bold;
+      color: #555;
+      font-size: 14pt;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>증상 목록</h2>
+  <div id="buttons"></div>
+</div>
+<div class="content">
+  <div id="info" class="info"></div>
+</div>
+
+<script>
+  const data = {
+    "두통": {
+      "소화기 허약형": {
+        "firstChoice": {
+          "name": "반하백출천마탕",
+          "description": "소화기가 허약한 사람의 두통",
+          "ingredients": ["반하", "진피", "맥아", "백출", "신곡", "창출", "인삼", "황기", "천마", "복령", "택사", "건강", "황백", "생강"]
+        },
+        "secondChoice": {
+          "name": "보중익기탕",
+          "description": "효과 부족 시",
+          "ingredients": ["황기", "인삼", "백출", "감초", "당귀", "진피", "승마", "시호"]
+        }
+      },
+      "소화기 이상 무": {
+        "firstChoice": {
+          "name": "오령산",
+          "description": "반복적 두통",
+          "ingredients": ["택사","창출","저령","복령","계피"]
+        },
+        "secondChoice": {
+          "name": "오령산 + 소시호탕",
+          "description": "효과 부족, 스트레스 요소",
+          "ingredients": ["택사","창출","저령","복령","계피", "시호", "황금","인삼","반하", "감초", "생강", "대조"]
+        }
+      }
+    },
+    "인후염, 중이염": {
+      "firstChoice": {
+        "name": "갈근해기탕(갈근탕+소시호탕으로 대체 가능)",
+        "description": "화농성 이비인후과 질환",
+        "ingredients": ["갈근", "시호", "황금", "강활", "석고", "작약", "승마", "백지", "길경", "감초", "생강", "대조"]
+      },
+      "secondChoice": {
+        "name": "연교패독산",
+        "description": "2주 후 효과 부족 시",
+        "ingredients": ["강활", "독활", "시호", "길경", "전호", "천궁", "복령", "금은화", "지각", "연교", "방풍", "형개", "박하", "감초", "생강"]
+      },
+      "thirdChoice": {
+        "name": "보중익기탕",
+        "description": "(2주 후) 효과 부족 시",
+        "ingredients": ["황기", "인삼", "백출", "감초", "당귀", "진피", "승마", "시호", "인삼", "황기", "복령", "백출", "당귀", "작약", "천궁", "숙지황", "감초", "계지"]
+      },
+      "alternative": {
+        "name": "오령산",
+        "description": "삼출물 경향 심하면",
+        "ingredients": ["복령","저령", "택사", "백출", "계지"]
+      }
+    },
+    "구역구토": {
+      "firstChoice": {
+        "name": "오령산",
+        "description": "갑작스러운 구토",
+        "ingredients": ["복령", "택사", "창출", "저령", "계피"]
+      },
+      "secondChoice": {
+        "name": "이중탕",
+        "description": "냉증, 위장허약을 동반한 구토",
+        "ingredients": ["인삼", "백출", "건강", "감초"]
+      },
+      "thirdChoice": {
+        "name": "반하후박탕",
+        "description": "심인성 구토",
+        "ingredients": ["반하", "복령", "후박", "소엽", "생강", "대조"]
+      },
+      "alternative": {
+        "name": "반하사심탕",
+        "description": "폭음폭식 후 구토",
+        "ingredients": ["반하", "황금", "인삼", "감초", "건강", "황련", "생강", "대조"]
+      }
+    },
+    "딸꾹질": {
+      "firstChoice": {
+        "name": "작약감초탕",
+        "description": "갑작스런 딸꾹질",
+        "ingredients": ["작약", "감초"]
+      },
+      "secondChoice": {
+        "name": "반하사심탕",
+        "description": "한열을 바꿔주는 의미",
+        "ingredients": ["반하", "황금", "인삼", "감초", "건강", "황련", "생강", "대조"]
+      }
+    },
+    "만성변비": {
+      "firstChoice": {
+        "name": "조위승기탕",
+        "description": "모든 변비",
+        "ingredients": ["대황", "감초", "망초"]
+      },
+      "secondChoice": {
+        "name": "가미소요산",
+        "description": "(1일 뒤) 대황함유제제 복용 후 복통이 심할 때",
+        "ingredients": ["치자", "작약", "시호", "복령", "백출", "박하", "목단피", "당귀", "건강", "감초"]
+      }
+    },
+    "급성설사": {
+      "firstChoice": {
+        "name": "반하사심탕",
+        "description": "모든 급성 설사",
+        "ingredients": ["반하", "황금", "인삼", "감초", "건강", "황련", "생강", "대조"]
+      },
+      "secondChoice": {
+        "name": "오령산",
+        "description": "효과 증대 필요 시",
+        "ingredients": ["택사", "창출", "저령", "복령", "계피"]
+      }
+    },
+    "위식도 역류질환": {
+      "firstChoice": {
+        "name": "반하사심탕",
+        "description": "모든 가슴쓰림",
+        "ingredients": ["반하", "황금", "인삼", "감초", "건강", "황련", "생강", "대조"]
+      },
+      "secondChoice": {
+        "name": "육군자탕[이중탕+이진탕]",
+        "description": "반하사심 효과 없을 때. 가장 많은 근거 확보된 처방",
+        "ingredients": ["창출", "인삼", "반하", "복령", "대조", "진피", "감초", "생강"]
+      },
+      "thirdChoice": {
+        "name": "+작약감초탕 추가",
+        "description": "복통 동반시",
+        "ingredients": ["작약","감초"]
+      },
+      "alternative": {
+        "name": "+황련해독탕 추가",
+        "description": "속쓰림 심할 때",
+        "ingredients": ["황금", "황련", "황백", "치자"]
+      }
+    },
+    "복통": {
+      "firstChoice": {
+        "name": "작약감초탕",
+        "description": "전반적인 복통",
+        "ingredients": ["작약", "감초"]
+      },
+      "secondChoice": {
+        "name": "+반하사심탕 추가",
+        "description": "가슴쓰림 동반시",
+        "ingredients": ["반하", "황금", "인삼", "감초", "건강", "황련", "생강", "대조"]
+      },
+      "alternative": {
+        "name": "+반하후박탕 추가",
+        "description": "복부 팽만감이 심할 때",
+        "ingredients": ["반하", "복령", "후박", "소엽", "생강", "대조"]
+      }
+    },
+    "식욕부진": {
+      "firstChoice": {
+        "name": "육군자탕[이중탕+이진탕]",
+        "description": "모든 식욕부진에 일단",
+        "ingredients": ["창출", "인삼", "반하", "복령", "대조", "진피", "감초", "생강"]
+      },
+      "secondChoice": {
+        "name": "보중익기탕",
+        "description": "육군자탕 효과 부족 시, 피로감 동반 시, 만성질환 시",
+        "ingredients": ["황기", "인삼", "백출", "감초", "당귀", "진피", "승마", "시호"]
+      },
+      "thirdChoice": {
+        "name": "맥문동탕 or 보중익기탕+생맥산",
+        "description": "위음허 시 고려",
+        "ingredients": ["맥문동", "반하", "대조", "감초", "인삼", "갱미"]
+      }
+    },
+    "소화불량": {
+      "firstChoice": {
+        "name": "내소산+대화중음",
+        "description": "경희의료원의 내소화중탕 처방. 만성 소화불량 반복 시, 그때그때마다 투여",
+        "ingredients": ["진피", "반하", "복령", "지실", "산사", "신곡", "사인", "향부자", "삼릉", "아출", "건강", "산사", "맥아", "진피", "후박", "택사", "지실", "사인"]
+      }
+    },
+    "두근거림": {
+      "firstChoice": {
+        "name": "오령산",
+        "description": "심전도에 이상 소견 없는 경우(=기질적 이상이 없는 경우)",
+        "ingredients": ["영계", "출감", "감초", "대조"]
+      },
+      "secondChoice": {
+        "name": "+팔미지황탕 추가",
+        "description": "신허경향이 있을 때",
+        "ingredients": ["지황", "산수유", "산약", "복령","목단피", "택사","계피","부자"]
+      }
+    },
+    "부종": {
+      "firstChoice": {
+        "name": "오령산",
+        "description": "일단 부종이라면",
+        "ingredients": ["저령", "계지","복령", "택사","백출"]
+      },
+      "secondChoice": {
+        "name": "+사군자탕 추가",
+        "description": "2주 뒤, 소화력 약한 경우",
+        "ingredients": ["인삼","백출","건강","감초"]
+      },
+      "thirdChoice": {
+        "name": "+팔미지황환 추가",
+        "description": "2주 뒤, 소화력 문제 없는 경우",
+        "ingredients": ["숙지황", "산수유", "산약", "택사", "복령", "목단피", "계지", "부자"]
+      }
+    },
+    "전립샘 비대": {
+      "firstChoice": {
+        "name": "팔미지황환",
+        "description": "각종 전립샘질환에는 일단",
+        "ingredients": ["숙지황", "산약", "산수유", "복령", "목단피", "택사", "계지", "부자"]
+      }
+    },
+    "불면": {
+      "firstChoice": {
+        "name": "가미귀비탕",
+        "description": "중도각성(자다가 깸)",
+        "ingredients": ["황기", "시호","산조인","창출","인삼", "복령", "원산치자","대조","당귀","감초","생강","목향","용안육"]
+      },
+      "secondChoice": {
+        "name": "황련해독탕",
+        "description": "입면 장애, 열증",
+        "ingredients": ["황금","황련", "황백", "치자", "감초"]
+      }
+    },
+    "불안장애": {
+      "firstChoice": {
+        "name": "가미소요산",
+        "description": "초조한 경우",
+        "ingredients": ["치자","작약","시호", "복령","백출","박하","목단피","당귀","건강","감초"]
+      },
+      "secondChoice": {
+        "name": "시호가용골모려탕",
+        "description": "스트레스가 심한 경우",
+        "ingredients": ["시호", "반하","계피","복령","황금","대조","인삼","모려","용골","생강"]
+      }
+    },
+    "우울증": {
+      "firstChoice": {
+        "name": "반하후박탕",
+        "description": "우울감이 심하다면 일단",
+        "ingredients": ["반하", "후박", "복령", "생강","소엽"]
+      },
+      "secondChoice": {
+        "name": "보중익기탕",
+        "description": "크게 허약, 의욕저하 해결이 안됨",
+        "ingredients": ["황기", "인삼","백출", "감초","당귀","진피","승마","시호"]
+      }
+    },
+    "두통": {
+      "firstChoice": {
+        "name": "오령산",
+        "description": "소화기 이상 무. 자주 반복되는 두통",
+        "ingredients": ["택사", "창출", "저령", "복령", "계피"]
+      },
+      "secondChoice": {
+        "name": "반하백출천마탕",
+        "description": "소화기 허약형",
+        "ingredients": ["반하", "진피","맥아","백출", "신곡","창출","인삼","황기","천마","복령","택사", "건강","황백","생강"]
+      },
+      "thirdChoice": {
+        "name": "보중익기탕",
+        "description": "소화기 허약형. 2-4주 후 효과 부족 시",
+        "ingredients": ["황기", "인삼", "백출", "감초","당귀","진피","승마","시호"]
+      }
+    },
+    "근육통": {
+      "firstChoice": {
+        "name": "작약감초탕",
+        "description": "근육통엔 일단",
+        "ingredients": ["작약", "감초"]
+      },
+      "secondChoice": {
+        "name": "작약감초탕 + 정제부자",
+        "description": "(2-3일 후) 호전 없을 시",
+        "ingredients": ["작약", "감초", "부자"]
+      },
+      "thirdChoice": {
+        "name": "쌍화탕 + 정제부자",
+        "description": "(2-3일 후) 호전 없을 시",
+        "ingredients": ["황기", "숙지황", "작약", "천궁", "당귀", "육계", "대추", "생강", "감초", "부자"]
+      }
+    },
+    "견관절, 목, 위팔 통증": {
+      "firstChoice": {
+        "name": "갈근탕",
+        "description": "체력이 강한 경우",
+        "ingredients": ["작약", "계지","감초","갈근","마황","대추","생강"]
+      },
+      "secondChoice": {
+        "name": "각종 시호제",
+        "description": "스트레스 요소 있는 경우",
+        "ingredients": ["시호가용골모려탕", "소시호탕","가미소요산","가미귀비탕","보중익기탕"]
+      },
+      "thirdChoice": {
+        "name": "+작약감초탕 추가",
+        "description": "7일 후 진통효과 증진",
+        "ingredients": ["작약","감초"]
+      },
+      "alternative": {
+        "name": "+정제부자 추가",
+        "description": "냉증 있는 경우",
+        "ingredients": ["부자"]
+      }
+    },
+    "진통 효과": {
+      "firstChoice": {
+        "name": "쌍화탕+정제부자",
+        "description": "-",
+        "ingredients": ["황기","숙지황","작약","천궁","당귀","육계","대추","생강","감초","정제부자"]
+      },
+      "secondChoice": {
+        "name": "작약감초탕 + 정제부자",
+        "description": "(2-3일 후) 호전 없을 시",
+        "ingredients": ["작약", "감초", "부자"]
+      },
+      "thirdChoice": {
+        "name": "+십전대보탕 추가",
+        "description": "만성, 고령 환자",
+        "ingredients": ["인삼","황기", "복령","백출","당귀","숙지황", "작약", "천궁", "당귀","계지", "감초"]
+      }
+    },
+    "급성염좌 타박상": {
+      "firstChoice": {
+        "name": "당귀수산",
+        "description": "모든 염좌 일단",
+        "ingredients": ["당귀","작약","오약","향부자","소목","홍화","도인"]
+      },
+      "secondChoice": {
+        "name": "+작약감초탕 추가",
+        "description": "(2-3일 후) 효과부족시",
+        "ingredients": ["작약", "감초"]
+      },
+      "alternative": {
+        "name": "+ 쌍화탕+정제부자 추가",
+        "description": "(2-3일 후) 진통 효과 부족 시",
+        "ingredients": ["석고","마황","대조","감초","생강","백출","황기","숙지황","작약","천궁","숙지황","작약","천궁","당귀","육계","대추","생강","감초","부자"]
+      }
+    },
+    "요통": {
+      "firstChoice": {
+        "name": "쌍화탕 + 정제부자",
+        "description": "(보행곤란 등 증상 있을 시",
+        "ingredients": ["황기", "숙지황", "작약", "천궁", "당귀", "육계","대추", "생강", "감초", "정제부자"]
+      },
+      "secondChoice": {
+        "name": "팔미지황탕",
+        "description": "신허경향, 하지위약 동반",
+        "ingredients": ["지황", "산수유", "산약", "택사", "복령", "목단피", "계피", "부자"]
+      }
+    },
+    "비복근 쥐남": {
+      "firstChoice": {
+        "name": "작약감초탕",
+        "description": "반복적인 비복근 경련",
+        "ingredients": ["작약", "감초"]
+      },
+      "secondChoice": {
+        "name": "쌍화탕",
+        "description": "(2주 후) 효과 부족 시",
+        "ingredients": ["황기", "숙지황", "작약", "천궁", "당귀", "육계", "대추", "생강", "감초"]
+      }
+    },
+    "피부건조증": {
+      "firstChoice": {
+        "name": "십전대보탕",
+        "description": "팔물탕+보중익기탕 대체 가능",
+        "ingredients": ["인삼", "황기", "복령", "백출", "당귀", "작약", "천궁", "숙지황", "감초", "계지"]
+      },
+      "secondChoice": {
+        "name": "온청음(사물탕+황련해독탕으로 대체)",
+        "description": "효과 부족 시",
+        "ingredients": ["황금","황련","황백","치자","숙지황","작약","당귀","천궁"]
+      }
+    },
+    "두드러기(식중독경향)": {
+      "firstChoice": {
+        "name": "인진오령산",
+        "description": "두드러기 환자는 일단",
+        "ingredients": ["인진호", "택사", "복령", "저령", "백출", "계지"]
+      },
+      "secondChoice": {
+        "name": "황련해독탕",
+        "description": "가려움이 심할 때",
+        "ingredients": ["황금","황련", "황백", "치자"]
+      }
+    },
+    "가려움": {
+      "firstChoice": {
+        "name": "황련해독탕",
+        "description": "각종 피부질환의 가려움",
+        "ingredients": ["황금","황련","황백","치자"]
+      }
+    },
+    "안구건조": {
+      "firstChoice": {
+        "name": "맥문동탕(육군자탕+생맥산으로 대체 가능)",
+        "description": "모든 안구건조",
+        "ingredients": ["맥문동", "반하", "대조", "감초", "인삼", "갱미"]
+      },
+      "secondChoice": {
+        "name": "육미지황탕",
+        "description": "(4주 후) 효과 부족 시",
+        "ingredients": ["숙지황", "산약", "산수유", "복령", "목단피", "택사"]
+      }
+    },
+    "비염": {
+      "firstChoice": {
+        "name": "황련해독탕",
+        "description": "비강출혈 동반 시",
+        "ingredients": ["황금","황련", "황백", "치자"]
+      }
+    },
+    "마른 기침": {
+      "firstChoice": {
+        "name": "맥문동탕",
+        "description": "마른 기침, 발작성 기침",
+        "ingredients": ["맥문동", "인삼", "갱미", "대조"]
+      },
+      "secondChoice": {
+        "name": "소시호탕",
+        "description": "효과 증대가 필요할 때",
+        "ingredients": ["시호", "반하", "황금", "인삼", "생강"]
+      },
+      "alternative": {
+        "name": "자음강화탕",
+        "description": "야간기침이 심할 때",
+        "ingredients": ["지황", "당귀", "천궁", "감초"]
+      }
+    },
+    "감기 예방": {
+      "firstChoice": {
+        "name": "보중익기탕 / 십전대보탕",
+        "description": "평상 시",
+        "ingredients": ["황기", "인삼", "백출", "감초", "당귀", "진피", "승마", "시호","/","인삼", "황기", "복령", "백출", "당귀", "작약", "천궁", "숙지황", "감초", "계지"]
+      },
+      "secondChoice": {
+        "name": "쌍화탕",
+        "description": "소화력이 좋은 경우",
+        "ingredients": ["황기", "숙지황", "작약", "천궁", "당귀", "육계", "대추", "생강", "감초"]
+      },
+      "alternative": {
+        "name": "소시호탕",
+        "description": "감기 유행 시",
+        "ingredients": ["시호", "황금", "인삼", "반하", "감초", "생강", "대조"]
+      }
+    },
+    "이미 감기": {
+      "목이 까끌거려요": {
+        "firstChoice": {
+          "name": "연교패독산",
+          "description": "",
+          "ingredients": ["연교", "금은화", "형개", "방풍", "강활", "독활", "시호", "천궁", "지각", "길경", "복령", "감초", "박하", "생강"]
+        }
+      },
+      "배가 사르르 아파요": {
+        "firstChoice": {
+          "name": "오령산",
+          "description": "",
+          "ingredients": ["택사", "창출", "저령", "복령", "계피"]
+        }
+      },
+      "튼튼한 체격": {
+        "firstChoice": {
+          "name": "갈근탕",
+          "description": "어떤 감기든",
+          "ingredients": ["작약", "계지", "감초", "갈근", "마황", "대추", "생강"]
+        }
+      },
+      "약한 체격": {
+        "firstChoice": {
+          "name": "쌍화탕",
+          "description": "어떤 감기든 65세 이상이면 이 타입으로 판단",
+          "ingredients": ["황기", "숙지황", "작약", "천궁", "당귀", "육계", "대추", "생강", "감초"]
+        },
+        "secondChoice": {
+          "name": "십전대보탕",
+          "description": "감기 걸린지 7일 지나도 안 낫는 경우",
+          "ingredients": ["인삼", "황기", "복령", "백출", "당귀", "작약", "천궁", "숙지황", "감초", "계지"]
+        }
+      }
+    },
+    "기침": {
+      "마른 기침, 만성 기침, 발작성 기침": {
+        "firstChoice": {
+          "name": "맥문동탕",
+          "description": "감염성 기침엔 무효",
+          "ingredients": ["맥문동", "반하", "대조", "감초", "인삼", "갱미"]
+        },
+        "secondChoice": {
+        "name": "맥문동탕+소시호탕",
+        "description": "7일 이상 장기화된 경우",
+        "ingredients": ["시호", "황금", "인삼", "반하", "감초", "생강", "대조"]
+      },
+      "alternative": {
+        "name": "맥문동탕+자음강화탕",
+        "description": "14일 이상 장기화 또는 야간기침이 심한 경우",
+        "ingredients": ["작약", "당귀", "숙지황", "백출", "맥문동", "생지황", "진피", "지모", "황백", "감초", "대조", "생강"]
+      }
+      }
+    }
+  };
+
+  const buttonsContainer = document.getElementById('buttons');
+  const infoContainer = document.getElementById('info');
+
+  function createChoiceElement(choice, index) {
+    const choiceElement = document.createElement('div');
+    choiceElement.className = 'choice-box';
+    choiceElement.innerHTML = `<p>${index}. ${choice.description}</p><h3>${choice.name}</h3>`;
+    const ingredientsText = document.createElement('div');
+    ingredientsText.className = 'ingredients';
+    ingredientsText.textContent = `구성 약재: ${choice.ingredients.join(', ')}`;
+    choiceElement.addEventListener('click', () => {
+      ingredientsText.style.display = ingredientsText.style.display === 'none' ? 'block' : 'none';
+    });
+    choiceElement.appendChild(ingredientsText);
+    return choiceElement;
+  }
+
+  for (let symptom in data) {
+    const button = document.createElement('div');
+    button.className = 'button';
+    button.textContent = symptom;
+    button.addEventListener('click', () => {
+      const info = data[symptom];
+      infoContainer.innerHTML = `<h2>${symptom}</h2>`;
+      let index = 1;
+      if (typeof info.firstChoice === 'undefined') { // 세부 분류가 있는 경우
+        for (let subSymptom in info) {
+          const subSymptomTitle = document.createElement('h3');
+          subSymptomTitle.textContent = subSymptom;
+          infoContainer.appendChild(subSymptomTitle);
+          infoContainer.appendChild(createChoiceElement(info[subSymptom].firstChoice, index++));
+          if (info[subSymptom].secondChoice) {
+            infoContainer.appendChild(createChoiceElement(info[subSymptom].secondChoice, index++));
+          }
+          if (info[subSymptom].alternative) {
+            infoContainer.appendChild(createChoiceElement(info[subSymptom].alternative, index++));
+          }
+          if (info[subSymptom].thirdChoice) {
+            infoContainer.appendChild(createChoiceElement(info[subSymptom].thirdChoice, index++));
+          }
+        }
+      } else { // 세부 분류가 없는 경우
+        infoContainer.appendChild(createChoiceElement(info.firstChoice, index++));
+        if (info.secondChoice) {
+          infoContainer.appendChild(createChoiceElement(info.secondChoice, index++));
+        }
+        if (info.alternative) {
+          infoContainer.appendChild(createChoiceElement(info.alternative, index++));
+        }
+        if (info.thirdChoice) {
+          infoContainer.appendChild(createChoiceElement(info.thirdChoice, index++));
+        }
+      }
+      infoContainer.style.display = 'block';
+    });
+    buttonsContainer.appendChild(button);
+  }
+</script>
+
+</body>
+</html>
